@@ -158,7 +158,8 @@ export class IfcLoader extends Component implements Disposable {
 
     SpatialIdsFinder.get(group, this.webIfc);
 
-    this.cleanUp();
+    // Fix: Don't dispose web-ifc instance, so it can still be used with the loaded model
+    // this.cleanUp();
 
     console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
 
