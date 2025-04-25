@@ -123,9 +123,13 @@ export class IfcLoader extends Component implements Disposable {
     const group = await this.getAllGeometries();
     group.name = name;
 
-    const jsonExporter = this.components.get(IfcJsonExporter);
-    const properties = await jsonExporter.export(this.webIfc, 0);
-    group.setLocalProperties(properties);
+    // Fix: Only extract properties if defined in settings
+    let properties: any;
+    if (this.settings.includeProperties) {
+      const jsonExporter = this.components.get(IfcJsonExporter);
+      properties = await jsonExporter.export(this.webIfc, 0);
+      group.setLocalProperties(properties);
+    }
 
     const fragments = this.components.get(FragmentsManager);
     fragments.groups.set(group.uuid, group);
@@ -142,11 +146,14 @@ export class IfcLoader extends Component implements Disposable {
       fragments.coordinate([group]);
     }
 
-    for (const [expressID] of group.data) {
-      const props = properties[expressID];
-      if (!props || !props.GlobalId) continue;
-      const globalID = props.GlobalId.value || props.GlobalId;
-      group.globalToExpressIDs.set(globalID, expressID);
+    // Fix: This map can only be populated if properties have been extracted
+    if (this.settings.includeProperties && properties) {
+      for (const [expressID] of group.data) {
+        const props = properties[expressID];
+        if (!props || !props.GlobalId) continue;
+        const globalID = props.GlobalId.value || props.GlobalId;
+        group.globalToExpressIDs.set(globalID, expressID);
+      }
     }
 
     SpatialIdsFinder.get(group, this.webIfc);
